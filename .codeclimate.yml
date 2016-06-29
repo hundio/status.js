@@ -1,0 +1,8 @@
+engines:
+  coffeelint:
+    enabled: true
+    config: .coffeelint.json
+
+ratings:
+  paths:
+    - "src/**.coffee"

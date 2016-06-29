@@ -1,0 +1,36 @@
+{
+  "name": "status.js",
+  "version": "1.0.0",
+  "description": "Status widget for Hund.io status pages.",
+  "main": "dist/status.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:hundio/status.js.git"
+  },
+  "keywords": [
+    "status.js",
+    "statusjs",
+    "status",
+    "uptime",
+    "downtime",
+    "widget",
+    "hund.io",
+    "hund",
+    "indicator"
+  ],
+  "author": "Jonathan la Cour",
+  "license": "MIT",
+  "devDependencies": {
+    "del": "^2.2.0",
+    "gulp": "^3.9.1",
+    "gulp-closure-compiler": "^0.4.0",
+    "gulp-coffee": "^2.3.2",
+    "gulp-concat": "^2.6.0",
+    "gulp-sass": "^2.3.2",
+    "gulp-strip-comments": "^2.4.3",
+    "gutil": "^1.6.4"
+  }
+}
