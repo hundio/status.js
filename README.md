@@ -8,7 +8,7 @@
 
 ## Usage
 
-Add this script to your head or footer: `https://libraries.hund.io/status-js/status-1.0.0.js`
+Add this script to your head or footer: `https://libraries.hund.io/status-js/status-1.0.1.js`
 
 Create an empty element with a selector (e.g. `<div id="status"></div>`) where you want the widget to appear.
 

@@ -4,7 +4,7 @@ window.Status or= {}
 
 class window.Status.Widget
   _this = null
-  _version = "1.0.0"
+  _version = "1.0.1"
   _prefix = "[Status Widget]"
   elements = {}
 
