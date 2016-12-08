@@ -90,7 +90,7 @@ class window.Status.Widget
     @update_updated_time(true, true)
 
     elements.widget.addEventListener "click", (e) ->
-      e.preventDefault()
+      if e.preventDefault then e.preventDefault() else e.returnValue = false
       e.stopPropagation()
       state = (elements.pane.dataset.open == "false")
       _this.update_updated_time() if state
@@ -130,7 +130,7 @@ class window.Status.Widget
       source.addEventListener event, listener, false
 
   error_listener: (e) ->
-    e.preventDefault()
+    if e.preventDefault then e.preventDefault() else e.returnValue = false
     if e.readyState == window["EventSource"].CLOSED
       console.log "#{_prefix} Connection closed."
     false
