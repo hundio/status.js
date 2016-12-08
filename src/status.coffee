@@ -117,7 +117,6 @@ class window.Status.Widget
 
   attach_event_listeners: (source) ->
     event_listeners = {
-
       "error": @error_listener,
       "ping_event": @ping_listener,
       "init_event": @initialize_listener,
