@@ -63,6 +63,7 @@
   position: absolute;
   top: 32px;
   width: 320px;
+  z-index: 900;
 
   &::before {
     border-color: transparent transparent #fff;
