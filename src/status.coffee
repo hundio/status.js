@@ -3,255 +3,277 @@ goog.provide "status.main"
 window.Status or= {}
 
 class window.Status.Widget
-  _this = null
-  _version = "1.0.1"
-  _prefix = "[Status Widget]"
-  elements = {}
+  _version = "2.1.0"
 
   constructor: (@options = {}) ->
-    _this = this
+    requiredOptions = ["hostname", "selector"]
+    optionsMissing = !@options?
+    optionsMissing = !(o of @options) for o in requiredOptions
 
-    required_options = ["status_page", "selector"]
-    required_options_missing = !@options?
-    required_options_missing = !(o of @options) for o in required_options
-
-    if @options == {} || required_options_missing
-      console.warn "#{_prefix} Initialization options missing or invalid, consult the documentation."
+    if @options == {} || optionsMissing
+      warn "Initialization options missing or invalid."
       return
 
-    default_options = {
+    defaultOptions = {
       "ssl": true,
-      "default_style": true,
-      "pane_position": "bottom-right",
-      "led_position": "left",
+      "css": true,
+      "debug": false,
+      "display": {
+        "hideOnError": true,
+        "ledOnly": false,
+        "panePosition": "bottom-right",
+        "ledPosition": "left",
+      }
       "i18n": {}
     }
 
-    (@options[k] = v if !@options[k]?) for k, v of default_options
+    (@options[k] = v if !@options[k]?) for k, v of defaultOptions
 
     i18n = {
       "heading": "Issues",
       "loading": "Loading status...",
-      "scheduled": "Scheduled"
+      "error": "Connection error",
+      "issue": {
+        "scheduled": "Scheduled",
+        "empty": "There are currently no issues."
+      },
+      "linkBack": "View Status Page"
     }
 
     (@options["i18n"][k] = v if !@options["i18n"][k]?) for k, v of i18n
 
-    if !/^https?:\/\//i.test(@options["status_page"])
-      protocol = (if @options["ssl"] then "https" else "http")
-      @options["status_page"] = "#{protocol}://#{@options["status_page"]}"
+    @debug = @options["debug"]
+    @hostname = @options["hostname"]
+    @display = @options["display"]
+    @i18n = @options["i18n"]
 
-    @ready -> _this.attach_widget()
+    if !/^https?:\/\//i.test(@hostname)
+      protocol = (if @options["ssl"] then "https" else "http")
+      @hostname = "#{protocol}://#{@hostname}"
+
+    @ready => @attachWidget()
 
   ready: (fn) ->
     return fn() if document.readyState != "loading"
     document.addEventListener "DOMContentLoaded", fn
 
-  add_styles: ->
+  injectStyles: ->
     link = document.createElement "link"
     link.rel = "stylesheet"
     link.href = "https://libraries.hund.io/status-js/status-#{_version}.css"
     document.head.appendChild link
 
-  attach_widget: ->
-    elements.widget = document.querySelector(@options["selector"])
-    elements.widget.style.visibility = "hidden"
+  attachWidget: ->
+    @elements = {}
 
-    if elements.widget == null
-      console.warn "#{_prefix} Unable to find element with selector: #{@options["selector"]}"
+    widgetSelector = @options["selector"]
+    @elements.widget = document.querySelector widgetSelector
+    @setVisibility "hidden"
+
+    if @elements.widget == null
+      warn "Unable to find element with selector: #{widgetSelector}"
       return
 
-    @add_styles() if @options["default_style"]
+    @injectStyles() if @options["css"]
     @connect()
 
-    add_class elements.widget, "status-widget"
+    addClass @elements.widget, "status-widget"
 
-    elements.led = create_el "span", "status-widget__led", elements.widget
-    elements.state = create_el "span", "status-widget__state", elements.widget
+    @elements.led = @createEl "span", @elements.widget, "led"
 
-    elements.widget.appendChild elements.led if @options["led_position"] != "left"
+    @elements.widget.appendChild @elements.led if @display["ledPosition"] != "left"
 
-    set_text elements.state, @options["i18n"]["loading"]
+    unless @display["ledOnly"]
+      @elements.state = @createEl "span", @elements.widget, "state"
+      setElText @elements.state, @i18n["loading"]
 
-    elements.pane = create_el "div", "status-widget--pane", elements.widget
-    elements.pane.dataset.open = false
-    elements.pane.dataset.position = @options["pane_position"]
+    @elements.pane = @createEl "div", @elements.widget, "pane"
+    @elements.pane.dataset.open = false
+    @elements.pane.dataset.position = @display["panePosition"]
 
-    elements.pane_heading = create_el "strong", "status-widget--pane__heading", elements.pane
-    set_text elements.pane_heading, @options["i18n"]["heading"]
+    @elements.paneHeading = @createEl "strong", @elements.pane, "pane__heading"
+    setElText @elements.paneHeading, @i18n["heading"]
 
-    elements.pane_container = create_el "div", "status-widget--pane__container", elements.pane
-    elements.pane_text = create_el "span", "status_widget--pane__text", elements.pane_container
-    set_text elements.pane_text, "Querying monitoring service..."
+    @elements.paneContainer = @createEl "div", @elements.pane, "pane__container"
+    @elements.paneText = @createEl "span", @elements.paneContainer, "pane__text"
+    setElText @elements.paneText, @i18n["loading"]
 
-    elements.pane_footer = create_el "a", "status-widget--pane__footer", elements.pane
-    elements.pane_footer.href = @options["status_page"]
-    elements.pane_footer.target = "status"
-    @update_updated_time(true, true)
+    @elements.paneFooter = @createEl "a", @elements.pane, "pane__footer"
+    @elements.paneFooter.href = @hostname
+    @elements.paneFooter.target = "status"
+    setElText @elements.paneFooter, @i18n["linkBack"]
 
-    elements.widget.addEventListener "click", (e) ->
-      if e.preventDefault then e.preventDefault() else e.returnValue = false
+    @elements.widget.addEventListener "click", (e) =>
+      e.preventDefault()
       e.stopPropagation()
-      state = (elements.pane.dataset.open == "false")
-      _this.update_updated_time() if state
-      elements.pane.dataset.open = state
+      state = (@elements.pane.dataset.open == "false")
+      @elements.pane.dataset.open = state
     , false
 
-    elements.pane.addEventListener "click", (e) -> e.stopPropagation()
+    @elements.pane.addEventListener "click", (e) -> e.stopPropagation()
 
-    document.addEventListener "click", (e) ->
-      elements.pane.dataset.open = false if elements.pane.dataset.open
+    document.addEventListener "click", (e) =>
+      @elements.pane.dataset.open = false if @elements.pane.dataset.open
     , false
+
+  setVisibility: (visibility) ->
+    @elements.widget.style.visibility = visibility
 
   connect: ->
     if !!window["EventSource"]
-      url = @options["status_page"] + "/live"
+      url = @hostname + "/live"
       url += "/#{@options["component"]}" if @options["component"]?
-      source = new window["EventSource"](url)
+      @source = new window["EventSource"](url)
 
-      source.onopen = -> elements.widget.style.visibility = "visible"
+      @source.onerror = @errorListener
+      @source.onopen = @openListener
 
-      @attach_event_listeners source
+      @addEventListeners()
     else
-      console.log "#{_prefix} Unsupported browser."
+      log "Unsupported browser."
 
-  attach_event_listeners: (source) ->
-    event_listeners = {
-      "error": @error_listener,
-      "ping_event": @ping_listener,
-      "init_event": @initialize_listener,
-      "status_event": @status_listener,
-      "issue_event": @issue_listener,
-      "update_event": @update_listener
+  reconnect: (backoff = 0) ->
+    clearTimeout @reconnectTimer
+    @reconnectTimer = setTimeout =>
+      @source.close()
+      @connect()
+    , backoff
+
+  errorListener: =>
+    @reconnectAttempt = 0 unless @reconnectAttempt > 0
+    delay = backoff(@reconnectAttempt)
+    log "Dropped: Attempting reconnect in #{delay}ms" if @debug
+    @reconnect delay
+    @reconnectAttempt += 1
+
+    @elements.led.dataset.state = "pending"
+
+    unless @display["hideOnError"]
+      @setVisibility "visible"
+      connectionLost = delay > 10000
+      setElText @elements.state, (if connectionLost then @i18n["error"] else @i18n["loading"]) if @elements.state
+
+  openListener: =>
+    @reconnectAttempt = 0
+    log "Connected"
+    @setVisibility "visible"
+
+  addEventListeners: ->
+    eventListeners = {
+      "init_event": @initListener,
+      "status_event": @statusListener,
+      "issue_event": @issueListener,
+      "update_event": @updateListener
     }
 
-    for event, listener of event_listeners
-      source.addEventListener event, listener, false
+    for event, listener of eventListeners
+      @source.addEventListener event, listener, false
 
-  error_listener: (e) ->
-    if e.preventDefault then e.preventDefault() else e.returnValue = false
-    if e.readyState == window["EventSource"].CLOSED
-      console.log "#{_prefix} Connection closed."
-    false
-
-  ping_listener: (e) ->
-    if elements.pane.dataset.open == "true"
-      _this.updated()
-
-  initialize_listener: (e) ->
-    console.log "#{_prefix} Connection established."
-    data = _this.parse_event_with_state e
+  initListener: (e) =>
+    data = @parseEventWithState e
 
     if "issues" of data
-      _this["issues"] = {}
-      _this.visible_issues = []
+      @issues = {}
+      @visibleIssues = []
 
       for issue in data["issues"]
-        _this["issues"][issue["id"]] = issue
-        _this.visible_issues.push issue["id"] if Object.keys(_this["issues"]).length < 5
+        @issues[issue["id"]] = issue
+        @visibleIssues.push issue["id"] if Object.keys(@issues).length < 5
 
-    _this.update_issues()
+    @updateIssues()
 
-  status_listener: (e) ->
-    data = _this.parse_event_with_state e
+  statusListener: (e) =>
+    data = @parseEventWithState e
 
-  issue_listener: (e) ->
-    data = _this.parse_event_with_state e
+  issueListener: (e) =>
+    data = @parseEventWithState e
 
     if "issue" of data
       data["issue"]["updates"] = []
-      _this["issues"][data["issue"]["id"]] = data["issue"]
+      @issues[data["issue"]["id"]] = data["issue"]
 
-      _this.visible_issues.pop() if _this.visible_issues.length >= 4
-      _this.visible_issues.unshift data["issue"]["id"]
+      @visibleIssues.pop() if @visibleIssues.length >= 4
+      @visibleIssues.unshift data["issue"]["id"]
 
-    _this.update_issues()
+    @updateIssues()
 
-  update_listener: (e) ->
-    data = _this.parse_event_with_state e
+  updateListener: (e) =>
+    data = @parseEventWithState e
 
     if "update" of data
-      issue_id = data["update"]["issue_id"]
-      return unless issue_id of _this["issues"]
+      issueId = data["update"]["issue_id"]
+      return unless issueId of @issues
 
-      _this["issues"][issue_id]["updates"].unshift data["update"]
-      _this.update_issues()
+      @issues[issueId]["updates"].unshift data["update"]
+      @updateIssues()
 
-  parse_event_with_state: (e) ->
-    data = parse e
-    _this.update_state data.state
-    _this.updated()
+  parse: (event) ->
+    try
+      return JSON.parse(event.data) if "data" of event
+    catch e
+      warn "Received invalid event payload."
+    {}
+
+  parseEventWithState: (e) ->
+    data = @parse e
+    @updateState data.state
     data
 
-  update_state: (state) ->
+  updateState: (state) ->
     state = "pending" if !state?
-    elements.led.dataset.state = state
+    @elements.led.dataset.state = state
 
-    text = state
-    if "state" of _this.options["i18n"]
-      text = _this.options["i18n"]["state"][state] if state of _this.options["i18n"]["state"]
+    if @elements.state?
+      text = state
+      if "state" of @i18n
+        text = @i18n["state"][state] if state of @i18n["state"]
 
-    set_text elements.state, text
+      setElText @elements.state, text
 
-  update_issues: ->
-    elements.pane_container.removeChild elements.pane_issues if elements.pane_issues?
-    elements.pane_issues = create_el "div", "status_widget--pane__issues", elements.pane_container
+  updateIssues: ->
+    @elements.paneContainer.removeChild @elements.paneIssues if @elements.paneIssues?
+    @elements.paneIssues = @createEl "div", @elements.paneContainer, "pane__issues"
 
-    if Object.keys(_this["issues"]).length == 0
-      set_text elements.pane_text, "There are currently no issues."
+    if Object.keys(@issues).length == 0
+      setElText @elements.paneText, @i18n["issue"]["empty"]
       return
 
-    elements.pane_text.dataset.hidden = true
+    @elements.paneText.dataset.hidden = true
 
-    for id in _this.visible_issues
-      continue unless id of _this["issues"]
-      _this.create_issue _this["issues"][id]
+    for issueId in @visibleIssues
+      continue unless issueId of @issues
+      @createIssue @issues[issueId]
 
-  create_issue: (issue) ->
-    container = create_el "div", "status_widget--issue", elements.pane_issues
+  createIssue: (issue) ->
+    container = @createEl "div", @elements.paneIssues, "issue"
 
-    data = _this.issue_data(issue)
+    data = @issueData(issue)
 
-    issue_elements = {
-      "component": { type: "strong", text: issue["component"] },
-      "title": { type: "a", text: issue["title"] + ": " },
-      "body": { type: "p", text: truncate(data.body) },
-      "label": { type: "span", text: data.label },
-      "time": { type: "span", text: data.date }
+    issueElements = {
+      "component": { "el": "strong", "text": issue["component"] },
+      "title": { "el": "a", "text": issue["title"] + ": " },
+      "body": { "el": "p", "html": data.body },
+      "label": { "el": "span", "text": data.label },
+      "time": { "el": "span", "text": data.date }
     }
 
-    for k, v of issue_elements
-      issue_elements[k] = create_el v.type, "status_widget--issue__#{k}", container
-      set_text issue_elements[k], v.text
+    for k, v of issueElements
+      issueElements[k] = @createEl v["el"], container, "issue__#{k}"
+      if "html" of v
+        setElHTML issueElements[k], v["html"]
+      else
+        setElText issueElements[k], v["text"]
 
-    issue_elements["title"].href = "#{_this.options["status_page"]}/issues/#{issue["id"]}"
-    issue_elements["title"].target = "status"
+    issueElements["title"].href = "#{@hostname}/issues/#{issue["id"]}"
+    issueElements["title"].target = "status"
 
-  updated: ->
-    _this.updated_time = time()
-    _this.update_updated_time(false)
-
-  update_updated_time: (repeat, init) ->
-    init = false unless init?
-    return if elements.pane.dataset.open == "false" && !init
-
-    _this.updated_time = time() if !_this.updated_time?
-    time_diff = time() - _this.updated_time
-    set_text elements.pane_footer, "Updated #{timeToStr time_diff} ago"
-
-    repeat = false if !repeat?
-    if repeat
-      setInterval ->
-        _this.update_updated_time(false)
-      , 1000
-
-  issue_data: (issue) ->
+  issueData: (issue) ->
     standing = !!issue["standing"]
     scheduled = !!issue["scheduled"]
     updates = issue["updates"].length > 0
 
     if scheduled
-      label = _this.options["i18n"]["scheduled"] unless standing
+      label = @i18n["issue"]["scheduled"] unless standing
       date = issue["starts_at"]
 
     issue = issue["updates"][0] if updates
@@ -262,42 +284,42 @@ class window.Status.Widget
 
     { body: body, label: label, date: new Date(date * 1000).toLocaleString() }
 
-  truncate = (string) ->
-    string = string.replace(/<(?:.|\n)*?>/gm, "").replace(/\n/g, " ")
-    string.substr(0, 140) + (if string.length > 140 then "\u2026" else "")
+  createEl: (type, parent, className = undefined) ->
+    cssClass = "status-widget"
+    cssClass += "__#{className}" if className?
+    createEl type, cssClass, parent
 
-  plural = (x) -> if x > 1 then "s" else ""
+  pluralize = (x) -> if x > 1 then "s" else ""
 
-  time = -> new Date().getTime()
-
-  timeToStr = (t) ->
-    temp = Math.floor(t / 1000)
-    hours = Math.floor((temp %= 86400) / 3600)
-    if hours then return hours + " hour" + plural(hours)
-    minutes = Math.floor((temp %= 3600) / 60)
-    if minutes then return minutes + " minute" + plural(minutes)
-    seconds = temp % 60
-    if seconds then return seconds + " second" + plural(seconds)
-    "<1 second"
-
-  add_class = (el, className) ->
+  addClass = (el, className) ->
     if el.classList then el.classList.add className else el.className += " " + className
 
-  create_el = (type, className, parent) ->
+  createEl = (type, className, parent) ->
     el = document.createElement type
-    add_class el, className
+    addClass el, className
     parent.appendChild el
     return el
 
-  set_text = (el, text) ->
+  setElText = (el, text) ->
     if typeof el.textContent != undefined then el.textContent = text else el.innerText = text
 
-  parse = (event) ->
-    try
-      return JSON.parse(event.data) if "data" of event
-    catch e
-      console.warn "#{_prefix} Received invalid event payload."
-    {}
+  setElHTML = (el, html) ->
+    el.innerHTML = html
+
+  backoff = (n, minimum = 100, limit = 60000) ->
+    Math.max Math.min(fib(n) * 1000, limit), minimum
+
+  fib = (n) ->
+    if n < 2 then n else fib(n - 1) + fib(n - 2)
+
+  log = (msg, level = "log") ->
+    console[level]("[Status Widget] #{msg}")
+
+  warn = (msg) ->
+    log msg, "warn"
+
+  error = (msg) ->
+    log msg, "error"
 
 window["Status"] = window.Status
 window["Status"]["Widget"] = window.Status.Widget

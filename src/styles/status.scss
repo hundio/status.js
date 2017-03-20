@@ -54,16 +54,16 @@
     }
   }
 
-.status-widget--pane {
+.status-widget__pane {
   background: #fff;
   box-shadow: 0 0 40px 0 rgba(0, 0, 0, .2);
   cursor: default;
   display: none;
   left: -20px;
+  margin-bottom: 20px;
   position: absolute;
   top: 32px;
   width: 320px;
-  z-index: 900;
 
   &::before {
     border-color: transparent transparent #fff;
@@ -106,7 +106,7 @@
   }
 }
 
-  .status-widget--pane__heading {
+  .status-widget__pane__heading {
     background: #fff;
     color: #333;
     display: block;
@@ -115,12 +115,12 @@
     text-align: center;
   }
 
-  .status-widget--pane__container {
+  .status-widget__pane__container {
     font-size: 14px;
     margin: 0 0 30px;
   }
 
-    .status_widget--pane__text {
+    .status-widget__pane__text {
       border-top: 1px solid #eee;
       color: #333;
       display: block;
@@ -132,7 +132,7 @@
       }
     }
 
-  .status-widget--pane__footer {
+  .status-widget__pane__footer {
     background: #fff;
     border-top: 1px solid #eee;
     bottom: 0;
@@ -149,25 +149,25 @@
     width: 100%;
   }
 
-.status_widget--issue {
+.status-widget__issue {
   background: #fff;
   border-top: 1px solid #eee;
   color: #272727;
   padding: 11px 11px 16px;
   position: relative;
 
-  &:hover .status_widget--issue__title {
+  &:hover .status-widget__issue__title {
     text-decoration: underline;
   }
 }
 
-  .status_widget--issue__component {
+  .status-widget__issue__component {
     color: #111;
     display: block;
     font-size: 15px;
   }
 
-  .status_widget--issue__title {
+  .status-widget__issue__title {
     color: #333;
     display: inline;
     float: left;
@@ -178,14 +178,25 @@
     text-decoration: none;
   }
 
-  .status_widget--issue__body {
+  .status-widget__issue__body {
     display: block;
     font-size: 13px;
     margin-bottom: 0;
     margin-top: 5px;
+
+    p,
+    ul,
+    ol {
+      margin-bottom: 10px;
+    }
+
+    ul {
+      list-style: disc;
+      list-style-position: inside;
+    }
   }
 
-  .status_widget--issue__label {
+  .status-widget__issue__label {
     display: inline-block;
     margin-right: 8px;
 
@@ -200,8 +211,8 @@
     }
   }
 
-  .status_widget--issue__label,
-  .status_widget--issue__time {
+  .status-widget__issue__label,
+  .status-widget__issue__time {
     color: #444;
     font-size: 12px;
   }

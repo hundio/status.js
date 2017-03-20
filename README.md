@@ -8,7 +8,7 @@
 
 ## Usage
 
-Add this script to your head or footer: `https://libraries.hund.io/status-js/status-1.0.1.js`
+Add this script to your head or footer: `https://libraries.hund.io/status-js/status-2.1.0.js`
 
 Create an empty element with a selector (e.g. `<div id="status"></div>`) where you want the widget to appear.
 
@@ -16,7 +16,7 @@ Configure the widget:
 
 ```javascript
 var statusWidget = new Status.Widget({
-  status_page: "piedpiper.hund.io",
+  hostname: "piedpiper.hund.io",
   selector: "#status"
 });
 ```
@@ -25,22 +25,32 @@ var statusWidget = new Status.Widget({
 
 ```javascript
 {
-  status_page: "", // The hostname of your status page
-  selector: "", // CSS selector for widget placement
-  default_style: true // Whether to inject the default CSS
-  pane_position: "bottom-right", // One of "top-left", "top-right", "bottom-left", "bottom-right"
-  led_position: "left", // Either "left" or "right"
-  component: "", // An individual component's status can be shown by setting this to the ID
+  hostname: "", // The hostname of your status page
+  component: "", // Show a specific component's status by providing its id
+  selector: "", // CSS selector of an existing element for widget placement
+  css: true, // Inject the default CSS styles
+  debug: false, // Log debugging messages
+  display: {
+    hideOnError: true, // Hide the widget if a connection cannot be established
+    ledOnly: false, // Show only the LED indicator, hiding the status text
+    panePosition: "bottom-right", // One of "top-left", "top-right", "bottom-left", "bottom-right"
+    ledPosition: "left", // Either "left" or "right"
+  },
   i18n: {
     heading: "Issues",
     loading: "Loading status...",
-    scheduled: "Scheduled",
+    error: "Connection error",
+    issue: {
+      scheduled: "Scheduled",
+      empty: "There are currently no issues."
+    },
     state: {
       operational: "Operational",
       degraded: "Degraded",
       outage: "Outage",
       pending: "Pending"
-    }
+    },
+    linkBack: "View Status Page"
   }
 }
 ```

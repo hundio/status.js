@@ -31,8 +31,7 @@ gulp.task("compile", ["clean", "coffeescript"], function() {
         closure_entry_point: "status.main",
         compilation_level: "ADVANCED_OPTIMIZATIONS",
         extra_annotation_name: "Status",
-        only_closure_dependencies: true,
-        warning_level: "VERBOSE"
+        only_closure_dependencies: true
       }
     }))
     .pipe(gulp.dest("./build/"));
