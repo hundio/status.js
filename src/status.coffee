@@ -81,11 +81,11 @@ class window.Status.Widget
 
     @elements.led = @createEl "span", @elements.widget, "led"
 
-    @elements.widget.appendChild @elements.led if @display["ledPosition"] != "left"
-
     unless @display["ledOnly"]
       @elements.state = @createEl "span", @elements.widget, "state"
       setElText @elements.state, @i18n["loading"]
+
+    @elements.widget.appendChild @elements.led if @display["ledPosition"] != "left"
 
     @elements.pane = @createEl "div", @elements.widget, "pane"
     @elements.pane.dataset.open = false
