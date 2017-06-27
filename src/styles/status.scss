@@ -161,7 +161,7 @@
   }
 }
 
-  .status-widget__issue__component {
+  .status-widget__issue__components {
     color: #111;
     display: block;
     font-size: 15px;
@@ -169,13 +169,14 @@
 
   .status-widget__issue__title {
     color: #333;
-    display: inline;
+    display: block;
     float: left;
     font-size: 13px;
     font-weight: bold;
     margin-top: 5px;
     padding-right: .3em;
     text-decoration: none;
+    width: 100%;
   }
 
   .status-widget__issue__body {

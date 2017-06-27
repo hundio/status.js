@@ -3,7 +3,7 @@ goog.provide "status.main"
 window.Status or= {}
 
 class window.Status.Widget
-  _version = "2.1.1"
+  _version = "2.2.1-compat"
 
   constructor: (@options = {}) ->
     requiredOptions = ["hostname", "selector"]
@@ -161,9 +161,17 @@ class window.Status.Widget
   addEventListeners: ->
     eventListeners = {
       "init_event": @initListener,
-      "status_event": @statusListener,
-      "issue_event": @issueListener,
-      "update_event": @updateListener
+      "status_event": @statusCreatedListener, # Compat Only
+      "issue_event": @issueCreatedListener, # Compat Only
+      "update_event": @issueUpdatedListener, # Compat Only
+      "status_created": @statusCreatedListener,
+      "degraded": @statusCreatedListener,
+      "restored": @statusCreatedListener,
+      "issue_created": @issueCreatedListener,
+      "issue_updated": @issueUpdatedListener,
+      "issue_resolved": @issueResolvedListener,
+      "issue_started": @issueCreatedListener,
+      "issue_ended": @issueResolvedListener
     }
 
     for event, listener of eventListeners
@@ -182,22 +190,23 @@ class window.Status.Widget
 
     @updateIssues()
 
-  statusListener: (e) =>
+  statusCreatedListener: (e) =>
     data = @parseEventWithState e
 
-  issueListener: (e) =>
+  issueCreatedListener: (e) =>
     data = @parseEventWithState e
 
     if "issue" of data
       data["issue"]["updates"] = []
       @issues[data["issue"]["id"]] = data["issue"]
 
-      @visibleIssues.pop() if @visibleIssues.length >= 4
-      @visibleIssues.unshift data["issue"]["id"]
+      unless data["issue"]["id"] in @visibleIssues
+        @visibleIssues.pop() if @visibleIssues.length >= 4
+        @visibleIssues.unshift data["issue"]["id"]
 
     @updateIssues()
 
-  updateListener: (e) =>
+  issueUpdatedListener: (e) =>
     data = @parseEventWithState e
 
     if "update" of data
@@ -206,6 +215,20 @@ class window.Status.Widget
 
       @issues[issueId]["updates"].unshift data["update"]
       @updateIssues()
+
+  issueResolvedListener: (e) =>
+    data = @parseEventWithState e
+
+    issueId = ""
+    if "update" of data
+      issueId = data["update"]["issue_id"]
+    else if "issue" of data
+      issueId = data["issue"]["id"]
+
+    return unless issueId of @issues
+    delete @issues[issueId]
+    @visibleIssues.unshift issueId
+    @updateIssues()
 
   parse: (event) ->
     try
@@ -250,12 +273,17 @@ class window.Status.Widget
     data = @issueData(issue)
 
     issueElements = {
-      "component": { "el": "strong", "text": issue["component"] },
+      "components": { "el": "strong", "text": undefined },
       "title": { "el": "a", "text": issue["title"] + ": " },
       "body": { "el": "p", "html": data.body },
       "label": { "el": "span", "text": data.label },
       "time": { "el": "span", "text": data.date }
     }
+
+    issueElements["components"]["text"] = if "component" of issue
+      issue["component"] # Compat Only
+    else
+      issue["components"].map((c) -> c["name"]).join ", "
 
     for k, v of issueElements
       issueElements[k] = @createEl v["el"], container, "issue__#{k}"
