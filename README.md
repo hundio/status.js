@@ -14,18 +14,20 @@ Create an empty element with a selector (e.g. `<div id="status"></div>`) where y
 
 Configure the widget:
 
-```javascript
-var statusWidget = new Status.Widget({
-  hostname: "piedpiper.hund.io",
-  selector: "#status"
-});
+```html
+<script>
+  var statusWidget = new Status.Widget({
+    hostname: "example.hund.io",
+    selector: "#status"
+  });
+</script>
 ```
 
 ### Configuration options
 
 ```javascript
 {
-  hostname: "", // The hostname of your status page
+  hostname: "", // The hostname of your status page (custom domains supported)
   component: "", // Show a specific component's status by providing its id
   selector: "", // CSS selector of an existing element for widget placement
   css: true, // Inject the default CSS styles
