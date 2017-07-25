@@ -3,7 +3,7 @@ goog.provide "status.main"
 window.Status or= {}
 
 class window.Status.Widget
-  _version = "2.2.1-compat"
+  _version = "2.3.1-compat"
 
   constructor: (@options = {}) ->
     requiredOptions = ["hostname", "selector"]
@@ -313,7 +313,14 @@ class window.Status.Widget
     label = issue["label"] if standing
     date = issue["created_at"] unless scheduled
 
-    { body: body, label: label, date: new Date(date * 1000).toLocaleString() }
+    date = new Date(date * 1000)
+    if toLocaleStringSupportsLocales() && "dates" of @i18n
+      dateOptions = @i18n["dates"]
+      date = date.toLocaleString dateOptions["locale"], dateOptions["options"]
+    else
+      date = date.toLocaleString()
+
+    { body: body, label: label, date: date }
 
   createEl: (type, parent, className = undefined) ->
     cssClass = "status-widget"
@@ -340,6 +347,11 @@ class window.Status.Widget
 
   setElHTML = (el, html) ->
     el.innerHTML = html
+
+  toLocaleStringSupportsLocales = ->
+    try new Date().toLocaleString "i"
+    catch e then return e instanceof RangeError
+    false
 
   backoff = (n, minimum = 100, limit = 60000) ->
     Math.max Math.min(fib(n) * 1000, limit), minimum

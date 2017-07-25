@@ -39,6 +39,10 @@ Configure the widget:
     ledPosition: "left", // Either "left" or "right"
   },
   i18n: {
+    dates: { // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleString#Parameters
+      locale: "",
+      options: {}
+    },
     heading: "Issues",
     loading: "Loading status...",
     error: "Connection error",
