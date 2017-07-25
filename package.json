@@ -1,6 +1,6 @@
 {
   "name": "status.js",
-  "version": "2.2.1-compat",
+  "version": "2.3.5-compat",
   "description": "Status widget for Hund.io status pages.",
   "main": "dist/status.js",
   "scripts": {
