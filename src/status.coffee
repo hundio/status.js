@@ -320,8 +320,6 @@ class window.Status.Widget
     cssClass += "__#{className}" if className?
     createEl type, cssClass, parent
 
-  pluralize = (x) -> if x > 1 then "s" else ""
-
   addClass = (el, className) ->
     if el.classList
       el.classList.add className
