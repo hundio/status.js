@@ -132,6 +132,11 @@
       }
     }
 
+  .status-widget__pane__issues {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
   .status-widget__pane__footer {
     background: #fff;
     border-top: 1px solid #eee;
