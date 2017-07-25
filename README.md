@@ -48,7 +48,11 @@ Configure the widget:
     error: "Connection error",
     issue: {
       scheduled: "Scheduled",
-      empty: "There are currently no issues."
+      empty: {
+        operational: "There are currently no reported issues."
+        degraded: "There are currently no reported issues, but we have detected that at least one component is degraded."
+        outage: "There are currently no reported issues, but we have detected outages on at least one component."
+      }
     },
     state: {
       operational: "Operational",

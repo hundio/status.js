@@ -3,7 +3,7 @@ goog.provide "status.main"
 window.Status or= {}
 
 class window.Status.Widget
-  _version = "2.3.1-compat"
+  _version = "2.3.2-compat"
 
   constructor: (@options = {}) ->
     requiredOptions = ["hostname", "selector"]
@@ -35,7 +35,13 @@ class window.Status.Widget
       "error": "Connection error",
       "issue": {
         "scheduled": "Scheduled",
-        "empty": "There are currently no issues."
+        "empty": {
+          "operational": "There are currently no reported issues."
+          "degraded": "There are currently no reported issues,
+            but we have detected that at least one component is degraded."
+          "outage": "There are currently no reported issues,
+            but we have detected outages on at least one component."
+        }
       },
       "linkBack": "View Status Page"
     }
@@ -50,6 +56,9 @@ class window.Status.Widget
     if !/^https?:\/\//i.test(@hostname)
       protocol = (if @options["ssl"] then "https" else "http")
       @hostname = "#{protocol}://#{@hostname}"
+
+    @issues = {}
+    @visibleIssues = []
 
     @ready => @attachWidget()
 
@@ -182,9 +191,6 @@ class window.Status.Widget
     data = @parseEventWithState e
 
     if "issues" of data
-      @issues = {}
-      @visibleIssues = []
-
       for issue in data["issues"]
         @issues[issue["id"]] = issue
         @visibleIssues.push issue["id"] if Object.keys(@issues).length < 5
@@ -254,14 +260,17 @@ class window.Status.Widget
 
       setElText @elements.state, text
 
+    @state = state
+    @updateIssuePaneText()
+
   updateIssues: ->
     if @elements.paneIssues?
       @elements.paneContainer.removeChild @elements.paneIssues
     @elements.paneIssues = @createEl "div",
       @elements.paneContainer, "pane__issues"
 
-    if Object.keys(@issues).length == 0
-      setElText @elements.paneText, @i18n["issue"]["empty"]
+    unless @issuesPresent()
+      @updateIssuePaneText()
       return
 
     @elements.paneText.dataset.hidden = true
@@ -269,6 +278,10 @@ class window.Status.Widget
     for issueId in @visibleIssues
       continue unless issueId of @issues
       @createIssue @issues[issueId]
+
+  updateIssuePaneText: ->
+    return if @issuesPresent()
+    setElText @elements.paneText, @i18n["issue"]["empty"][@state]
 
   createIssue: (issue) ->
     container = @createEl "div", @elements.paneIssues, "issue"
@@ -326,6 +339,9 @@ class window.Status.Widget
     cssClass = "status-widget"
     cssClass += "__#{className}" if className?
     createEl type, cssClass, parent
+
+  issuesPresent: ->
+    Object.keys(@issues).length != 0
 
   addClass = (el, className) ->
     if el.classList
