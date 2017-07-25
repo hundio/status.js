@@ -3,7 +3,7 @@ goog.provide "status.main"
 window.Status or= {}
 
 class window.Status.Widget
-  _version = "2.3.4-compat"
+  _version = "2.3.5-compat"
 
   constructor: (@options = {}) ->
     requiredOptions = ["hostname", "selector"]
