@@ -3,7 +3,7 @@ goog.provide "status.main"
 window.Status or= {}
 
 class window.Status.Widget
-  _version = "2.3.2-compat"
+  _version = "2.3.4-compat"
 
   constructor: (@options = {}) ->
     requiredOptions = ["hostname", "selector"]
@@ -191,9 +191,11 @@ class window.Status.Widget
     data = @parseEventWithState e
 
     if "issues" of data
+      @issues = {}
+      @visibleIssues = []
+
       for issue in data["issues"]
-        @issues[issue["id"]] = issue
-        @visibleIssues.push issue["id"] if Object.keys(@issues).length < 5
+        @insertIssue issue
 
     @updateIssues()
 
@@ -205,11 +207,7 @@ class window.Status.Widget
 
     if "issue" of data
       data["issue"]["updates"] = []
-      @issues[data["issue"]["id"]] = data["issue"]
-
-      unless data["issue"]["id"] in @visibleIssues
-        @visibleIssues.pop() if @visibleIssues.length >= 4
-        @visibleIssues.unshift data["issue"]["id"]
+      @insertIssue data["issue"]
 
     @updateIssues()
 
@@ -233,8 +231,7 @@ class window.Status.Widget
       issueId = data["issue"]["id"]
 
     return unless issueId of @issues
-    delete @issues[issueId]
-    @visibleIssues.unshift issueId
+    @removeIssue issueId
     @updateIssues()
 
   parse: (event) ->
@@ -282,6 +279,17 @@ class window.Status.Widget
   updateIssuePaneText: ->
     return if @issuesPresent()
     setElText @elements.paneText, @i18n["issue"]["empty"][@state]
+
+  insertIssue: (issue) ->
+    id = issue["id"]
+    @issues[id] = issue
+    return if id in @visibleIssues
+    @visibleIssues.splice @issuePosition(id), 0, id
+
+  removeIssue: (id) ->
+    delete @issues[id]
+    return unless id in @visibleIssues
+    @visibleIssues.splice @visibleIssues.indexOf(id), 1
 
   createIssue: (issue) ->
     container = @createEl "div", @elements.paneIssues, "issue"
@@ -334,6 +342,23 @@ class window.Status.Widget
       date = date.toLocaleString()
 
     { body: body, label: label, date: date }
+
+  issuePosition: (id) ->
+    now = Math.floor(Date.now() / 1000)
+    timestamps = "past": [], "future": []
+    issueTimestamp = 0
+
+    for _, issue of @issues
+      scheduled = !!issue["scheduled"]
+      timestamp = if scheduled then issue["starts_at"] else issue["created_at"]
+      timestamps[if timestamp > now then "future" else "past"].push timestamp
+      issueTimestamp = timestamp if issue["id"] == id
+
+    if issueTimestamp in timestamps["future"]
+      timestamps["future"].sort().indexOf(issueTimestamp) +
+        timestamps["past"].length
+    else
+      timestamps["past"].sort().reverse().indexOf(issueTimestamp)
 
   createEl: (type, parent, className = undefined) ->
     cssClass = "status-widget"
