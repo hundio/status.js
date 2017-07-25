@@ -85,7 +85,8 @@ class window.Status.Widget
       @elements.state = @createEl "span", @elements.widget, "state"
       setElText @elements.state, @i18n["loading"]
 
-    @elements.widget.appendChild @elements.led if @display["ledPosition"] != "left"
+    if @display["ledPosition"] != "left"
+      @elements.widget.appendChild @elements.led
 
     @elements.pane = @createEl "div", @elements.widget, "pane"
     @elements.pane.dataset.open = false
@@ -150,8 +151,8 @@ class window.Status.Widget
 
     unless @display["hideOnError"]
       @setVisibility "visible"
-      connectionLost = delay > 10000
-      setElText @elements.state, (if connectionLost then @i18n["error"] else @i18n["loading"]) if @elements.state
+      stateText = if delay > 10000 then @i18n["error"] else @i18n["loading"]
+      setElText @elements.state, stateText if @elements.state
 
   openListener: =>
     @reconnectAttempt = 0
@@ -254,8 +255,10 @@ class window.Status.Widget
       setElText @elements.state, text
 
   updateIssues: ->
-    @elements.paneContainer.removeChild @elements.paneIssues if @elements.paneIssues?
-    @elements.paneIssues = @createEl "div", @elements.paneContainer, "pane__issues"
+    if @elements.paneIssues?
+      @elements.paneContainer.removeChild @elements.paneIssues
+    @elements.paneIssues = @createEl "div",
+      @elements.paneContainer, "pane__issues"
 
     if Object.keys(@issues).length == 0
       setElText @elements.paneText, @i18n["issue"]["empty"]
@@ -320,7 +323,10 @@ class window.Status.Widget
   pluralize = (x) -> if x > 1 then "s" else ""
 
   addClass = (el, className) ->
-    if el.classList then el.classList.add className else el.className += " " + className
+    if el.classList
+      el.classList.add className
+    else
+      el.className += " " + className
 
   createEl = (type, className, parent) ->
     el = document.createElement type
@@ -329,7 +335,10 @@ class window.Status.Widget
     return el
 
   setElText = (el, text) ->
-    if typeof el.textContent != undefined then el.textContent = text else el.innerText = text
+    if typeof el.textContent != undefined
+      el.textContent = text
+    else
+      el.innerText = text
 
   setElHTML = (el, html) ->
     el.innerHTML = html
