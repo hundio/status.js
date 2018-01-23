@@ -20,6 +20,7 @@ class window.Status.Widget
       "debug": false,
       "display": {
         "hideOnError": true,
+        "pane": true,
         "ledOnly": false,
         "panePosition": "bottom-right",
         "ledPosition": "left",
@@ -108,18 +109,23 @@ class window.Status.Widget
     @elements.paneFooter.target = "status"
     setElText @elements.paneFooter, @i18n["linkBack"]
 
-    @elements.widget.addEventListener "click", (e) =>
-      e.preventDefault()
-      e.stopPropagation()
-      state = (@elements.pane.dataset.open == "false")
-      @elements.pane.dataset.open = state
-    , false
+    if @display["pane"]
+      addClass @elements.widget, "status_widget--pane-enabled"
 
-    @elements.pane.addEventListener "click", (e) -> e.stopPropagation()
 
-    document.addEventListener "click", (e) =>
-      @elements.pane.dataset.open = false if @elements.pane.dataset.open
-    , false
+      @elements.widget.addEventListener "click", (e) =>
+        e.preventDefault()
+        e.stopPropagation()
+        state = (@elements.pane.dataset.open == "false")
+        @elements.pane.dataset.open = state
+      , false
+
+      @elements.pane.addEventListener "click", (e) -> e.stopPropagation()
+
+      document.addEventListener "click", (e) =>
+        if @elements.pane.dataset.open
+          @elements.pane.dataset.open = false
+      , false
 
   setVisibility: (visibility) ->
     @elements.widget.style.visibility = visibility

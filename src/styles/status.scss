@@ -3,7 +3,7 @@
   line-height: 1rem;
   position: relative;
 
-  &:hover {
+  &.status_widget--pane-enabled:hover {
     cursor: pointer;
   }
 }

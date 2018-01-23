@@ -34,6 +34,7 @@ Configure the widget:
   debug: false, // Log debugging messages
   display: {
     hideOnError: true, // Hide the widget if a connection cannot be established
+    pane: true, // Display the pane dropdown
     ledOnly: false, // Show only the LED indicator, hiding the status text
     panePosition: "bottom-right", // One of "top-left", "top-right", "bottom-left", "bottom-right"
     ledPosition: "left", // Either "left" or "right"
