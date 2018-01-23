@@ -11,7 +11,7 @@ class window.Status.Widget
     optionsMissing = !(o of @options) for o in requiredOptions
 
     if @options == {} || optionsMissing
-      warn "Initialization options missing or invalid."
+      warn "Options missing or invalid"
       return
 
     defaultOptions = {
@@ -145,7 +145,7 @@ class window.Status.Widget
 
       @addEventListeners()
     else
-      log "Unsupported browser."
+      log "Browser unsupported"
 
   reconnect: (backoff = 0) ->
     clearTimeout @reconnectTimer
@@ -157,7 +157,7 @@ class window.Status.Widget
   errorListener: =>
     @reconnectAttempt = 0 unless @reconnectAttempt > 0
     delay = backoff(@reconnectAttempt)
-    log "Dropped: Attempting reconnect in #{delay}ms" if @debug
+    log "Reconnecting in #{delay}ms" if @debug
     @reconnect delay
     @reconnectAttempt += 1
 
@@ -250,7 +250,7 @@ class window.Status.Widget
     try
       return JSON.parse(event.data) if "data" of event
     catch e
-      warn "Received invalid event payload."
+      warn "Received invalid event payload"
     {}
 
   parseEventWithState: (e) ->
