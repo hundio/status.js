@@ -176,6 +176,8 @@ class window.Status.Widget
       "issue_created": @issueCreatedListener,
       "issue_updated": @issueUpdatedListener,
       "issue_resolved": @issueResolvedListener,
+      "issue_reopened": @issueReopenedListener,
+      "issue_cancelled": @issueResolvedListener,
       "issue_started": @issueCreatedListener,
       "issue_ended": @issueResolvedListener
     }
@@ -228,6 +230,14 @@ class window.Status.Widget
 
     return unless issueId of @issues
     @removeIssue issueId
+    @updateIssues()
+
+  issueReopenedListener: (e) =>
+    data = @parseEventWithState e
+
+    if "update" of data
+      @insertIssue data["update"]["issue"]
+
     @updateIssues()
 
   parse: (event) ->
