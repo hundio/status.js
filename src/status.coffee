@@ -95,8 +95,8 @@ class window.Status.Widget
       @elements.widget.appendChild @elements.led
 
     @elements.pane = @createEl "div", @elements.widget, "pane"
-    @elements.pane.dataset.open = false
-    @elements.pane.dataset.position = @display["panePosition"]
+    setElDataAttr @elements.pane, "open", false
+    setElDataAttr @elements.pane, "position", @display["panePosition"]
 
     @elements.paneHeading = @createEl "strong", @elements.pane, "pane__heading"
     setElText @elements.paneHeading, @i18n["heading"]
@@ -117,14 +117,14 @@ class window.Status.Widget
         e.preventDefault()
         e.stopPropagation()
         state = (@elements.pane.dataset.open == "false")
-        @elements.pane.dataset.open = state
+        setElDataAttr @elements.pane, "open", state
       , false
 
       @elements.pane.addEventListener "click", (e) -> e.stopPropagation()
 
       document.addEventListener "click", (e) =>
         if @elements.pane.dataset.open
-          @elements.pane.dataset.open = false
+          setElDataAttr @elements.pane, "open", false
       , false
 
   setVisibility: (visibility) ->
@@ -161,7 +161,7 @@ class window.Status.Widget
     @reconnect delay
     @reconnectAttempt += 1
 
-    @elements.led.dataset.state = "pending"
+    setElDataAttr @elements.led "state", "pending"
 
     unless @display["hideOnError"]
       @setVisibility "visible"
@@ -260,7 +260,7 @@ class window.Status.Widget
 
   updateState: (state) ->
     state = "pending" if !state?
-    @elements.led.dataset.state = state
+    setElDataAttr @elements.led, "state", state
 
     if @elements.state?
       text = state
@@ -282,7 +282,7 @@ class window.Status.Widget
       @updateIssuePaneText()
       return
 
-    @elements.paneText.dataset.hidden = true
+    setElDataAttr @elements.paneText, "hidden", true
 
     for issueId in @visibleIssues
       continue unless issueId of @issues
@@ -402,6 +402,9 @@ class window.Status.Widget
 
   setElHTML = (el, html) ->
     el.innerHTML = html
+
+  setElDataAttr = (el, attr, val) ->
+    el.setAttribute "data-#{attr}", val
 
   toLocaleStringSupportsLocales = ->
     try new Date().toLocaleString "i"
