@@ -58,11 +58,12 @@
   background: #fff;
   box-shadow: 0 0 40px 0 rgba(0, 0, 0, .2);
   cursor: default;
-  display: none;
+  display: block;
   left: -20px;
   margin-bottom: 20px;
   position: absolute;
   top: 32px;
+  visibility: hidden;
   width: 320px;
 
   &::before {
@@ -79,7 +80,7 @@
   }
 
   &[data-open="true"] {
-    display: block;
+    visibility: visible;
   }
 
   &[data-position^="top-"] {

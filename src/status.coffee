@@ -112,6 +112,7 @@ class window.Status.Widget
     if @display["pane"]
       addClass @elements.widget, "status_widget--pane-enabled"
 
+      window.addEventListener "resize", @debounce(@alignPane, 250)
 
       @elements.widget.addEventListener "click", (e) =>
         e.preventDefault()
@@ -268,6 +269,7 @@ class window.Status.Widget
         text = @i18n["state"][state] if state of @i18n["state"]
 
       setElText @elements.state, text
+      @alignPane()
 
     @state = state
     @updateIssuePaneText()
@@ -382,6 +384,30 @@ class window.Status.Widget
     el.target = @options["linkTarget"]
     el.rel = "noopener"
 
+  alignPane: ->
+    offset = @elements.led.offsetLeft
+
+    if endsWith @display["panePosition"], "left"
+      offset -= @elements.pane.offsetWidth
+      offset += 20 + @elements.led.offsetWidth
+    else
+      offset -= 20
+
+    @elements.pane.style.left = offset + "px"
+
+  debounce: (func, threshold, execAsap) ->
+    timeout = null
+    (args...) =>
+      obj = this
+      delayed = ->
+        func.apply(obj, args) unless execAsap
+        timeout = null
+      if timeout
+        clearTimeout(timeout)
+      else if (execAsap)
+        func.apply(obj, args)
+      timeout = setTimeout delayed, threshold || 100
+
   addClass = (el, className) ->
     if el.classList
       el.classList.add className
@@ -410,6 +436,9 @@ class window.Status.Widget
     try new Date().toLocaleString "i"
     catch e then return e instanceof RangeError
     false
+
+  endsWith = (str, suffix) ->
+    str.indexOf(suffix, str.length - suffix.length) != -1
 
   backoff = (n, minimum = 100, limit = 60000) ->
     Math.max Math.min(fib(n) * 1000, limit), minimum
