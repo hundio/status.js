@@ -126,8 +126,12 @@ class window.Status.Widget
 
   connect: ->
     if !!window["EventSource"]
-      url = @hostname + "/live"
-      url += "/#{@options["component"]}" if @options["component"]?
+      url = "#{@hostname}/live/v2/"
+      if @options["component"]?
+        url += "component/#{@options["component"]}"
+      else
+        url += "status_page"
+
       @source = new window["EventSource"](url)
 
       @source.onerror = @errorListener
@@ -166,9 +170,6 @@ class window.Status.Widget
   addEventListeners: ->
     eventListeners = {
       "init_event": @initListener,
-      "status_event": @statusCreatedListener, # Compat Only
-      "issue_event": @issueCreatedListener, # Compat Only
-      "update_event": @issueUpdatedListener, # Compat Only
       "status_created": @statusCreatedListener,
       "degraded": @statusCreatedListener,
       "restored": @statusCreatedListener,
@@ -292,17 +293,15 @@ class window.Status.Widget
     data = @issueData(issue)
 
     issueElements = {
-      "components": { "el": "strong", "text": undefined },
+      "components": {
+        "el": "strong",
+        "text": issue["components"].map((c) -> c["name"]).join ", "
+      },
       "title": { "el": "a", "text": issue["title"] + ": " },
       "body": { "el": "p", "html": data.body },
       "label": { "el": "span", "text": data.label },
       "time": { "el": "span", "text": data.date }
     }
-
-    issueElements["components"]["text"] = if "component" of issue
-      issue["component"] # Compat Only
-    else
-      issue["components"].map((c) -> c["name"]).join ", "
 
     for k, v of issueElements
       issueElements[k] = @createEl v["el"], container, "issue__#{k}"
