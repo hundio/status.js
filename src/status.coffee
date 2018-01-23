@@ -24,30 +24,25 @@ class window.Status.Widget
         "panePosition": "bottom-right",
         "ledPosition": "left",
       }
-      "i18n": {}
+      "i18n": {
+        "heading": "Issues",
+        "loading": "Loading status...",
+        "error": "Connection error",
+        "issue": {
+          "scheduled": "Scheduled",
+          "empty": {
+            "operational": "There are currently no reported issues."
+            "degraded": "There are currently no reported issues,
+              but we have detected that at least one component is degraded."
+            "outage": "There are currently no reported issues,
+              but we have detected outages on at least one component."
+          }
+        },
+        "linkBack": "View Status Page"
+      }
     }
 
-    (@options[k] = v if !@options[k]?) for k, v of defaultOptions
-
-    i18n = {
-      "heading": "Issues",
-      "loading": "Loading status...",
-      "error": "Connection error",
-      "issue": {
-        "scheduled": "Scheduled",
-        "empty": {
-          "operational": "There are currently no reported issues."
-          "degraded": "There are currently no reported issues,
-            but we have detected that at least one component is degraded."
-          "outage": "There are currently no reported issues,
-            but we have detected outages on at least one component."
-        }
-      },
-      "linkBack": "View Status Page"
-    }
-
-    (@options["i18n"][k] = v if !@options["i18n"][k]?) for k, v of i18n
-
+    @options = deepMerge defaultOptions, @options
     @debug = @options["debug"]
     @hostname = @options["hostname"]
     @display = @options["display"]
@@ -399,6 +394,23 @@ class window.Status.Widget
 
   fib = (n) ->
     if n < 2 then n else fib(n - 1) + fib(n - 2)
+
+  deepMerge = (target, source) ->
+    destination = {}
+
+    for k in (Object.keys(target)).concat(Object.keys(source))
+      tv = target[k]
+      sv = source[k]
+
+      if sv?
+        if typeof sv == 'object'
+          destination[k] = deepMerge tv || {}, sv || {}
+        else
+          destination[k] = sv
+      else
+        destination[k] = tv
+
+    destination
 
   log = (msg, level = "log") ->
     console[level]("[Status Widget] #{msg}")
