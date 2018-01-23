@@ -18,6 +18,7 @@ class window.Status.Widget
       "ssl": true,
       "css": true,
       "debug": false,
+      "linkTarget": "_blank",
       "display": {
         "hideOnError": true,
         "pane": true,
@@ -105,8 +106,7 @@ class window.Status.Widget
     setElText @elements.paneText, @i18n["loading"]
 
     @elements.paneFooter = @createEl "a", @elements.pane, "pane__footer"
-    @elements.paneFooter.href = @hostname
-    @elements.paneFooter.target = "status"
+    @buildLink @elements.paneFooter, @hostname
     setElText @elements.paneFooter, @i18n["linkBack"]
 
     if @display["pane"]
@@ -326,8 +326,7 @@ class window.Status.Widget
       else
         setElText issueElements[k], v["text"]
 
-    issueElements["title"].href = "#{@hostname}/issues/#{issue["id"]}"
-    issueElements["title"].target = "status"
+    @buildLink issueElements["title"], "#{@hostname}/issues/#{issue["id"]}"
 
   issueData: (issue) ->
     standing = !!issue["standing"]
@@ -370,13 +369,18 @@ class window.Status.Widget
     else
       timestamps["past"].sort().reverse().indexOf(issueTimestamp)
 
+  issuesPresent: ->
+    Object.keys(@issues).length != 0
+
   createEl: (type, parent, className = undefined) ->
     cssClass = "status-widget"
     cssClass += "__#{className}" if className?
     createEl type, cssClass, parent
 
-  issuesPresent: ->
-    Object.keys(@issues).length != 0
+  buildLink: (el, href) ->
+    el.href = href
+    el.target = @options["linkTarget"]
+    el.rel = "noopener"
 
   addClass = (el, className) ->
     if el.classList

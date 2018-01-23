@@ -32,6 +32,7 @@ Configure the widget:
   selector: "", // CSS selector of an existing element for widget placement
   css: true, // Inject the default CSS styles
   debug: false, // Log debugging messages
+  linkTarget: "_blank", // The link target for outbound links (see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-target)
   display: {
     hideOnError: true, // Hide the widget if a connection cannot be established
     pane: true, // Display the pane dropdown
