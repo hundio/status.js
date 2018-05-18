@@ -22,14 +22,22 @@ class window.Status.Widget
       "display": {
         "hideOnError": true,
         "pane": true,
+        "paneStatistics": true,
         "ledOnly": false,
         "panePosition": "bottom-right",
         "ledPosition": "left",
+        "statistic": {
+          "uptimeDecimals": 4
+        }
       }
       "i18n": {
         "heading": "Issues",
         "loading": "Loading status...",
         "error": "Connection error",
+        "statistic": {
+          "streak": "No events for ${duration}!"
+          "uptime": "${percent}% Uptime"
+        },
         "issue": {
           "scheduled": "Scheduled",
           "empty": {
@@ -40,7 +48,56 @@ class window.Status.Widget
               but we have detected outages on at least one component."
           }
         },
-        "linkBack": "View Status Page"
+        "linkBack": "View Status Page",
+        "time": {
+          "distanceInWords": {
+            "halfAMinute": "half a minute",
+            "lessThanXSeconds": {
+              "one": "less than 1 second",
+              "other": "less than ${count} seconds"
+            },
+            "xSeconds": {
+              "one": "1 second",
+              "other": "${count} seconds"
+            },
+            "lessThanXMinutes": {
+              "one": "less than a minute",
+              "other": "less than ${count} minutes"
+            },
+            "xMinutes": {
+              "one": "1 minute",
+              "other": "${count} minutes"
+            },
+            "aboutXHours": {
+              "one": "about 1 hour",
+              "other": "about ${count} hours"
+            },
+            "xDays": {
+              "one": "1 day",
+              "other": "${count} days"
+            },
+            "aboutXMonths": {
+              "one": "about 1 month",
+              "other": "about ${count} months"
+            },
+            "xMonths": {
+              "one": "1 month",
+              "other": "${count} months"
+            },
+            "aboutXYears": {
+              "one": "about 1 year",
+              "other": "about ${count} years"
+            },
+            "overXYears": {
+              "one": "over 1 year",
+              "other": "over ${count} years"
+            },
+            "almostXYears": {
+              "one": "almost 1 year",
+              "other": "almost ${count} years"
+            }
+          }
+        }
       }
     }
 
@@ -98,8 +155,14 @@ class window.Status.Widget
     setElDataAttr @elements.pane, "open", false
     setElDataAttr @elements.pane, "position", @display["panePosition"]
 
-    @elements.paneHeading = @createEl "strong", @elements.pane, "pane__heading"
+    @elements.paneHeader = @createEl "div", @elements.pane, "pane__header"
+    @elements.paneHeading = @createEl "strong", @elements.paneHeader, "pane__heading"
     setElText @elements.paneHeading, @i18n["heading"]
+
+    if @display["paneStatistics"]
+      @elements.paneStatistics = @createEl "div", @elements.paneHeader, "pane_statistics"
+      @elements.statisticUptime = @buildStatistic()
+      @elements.statisticStreak = @buildStatistic()
 
     @elements.paneContainer = @createEl "div", @elements.pane, "pane__container"
     @elements.paneText = @createEl "span", @elements.paneContainer, "pane__text"
@@ -110,7 +173,7 @@ class window.Status.Widget
     setElText @elements.paneFooter, @i18n["linkBack"]
 
     if @display["pane"]
-      addClass @elements.widget, "status_widget--pane-enabled"
+      addClass @elements.widget, "status-widget--pane-enabled"
 
       window.addEventListener "resize", @debounce(@alignPane, 250)
 
@@ -177,23 +240,28 @@ class window.Status.Widget
   addEventListeners: ->
     eventListeners = {
       "init_event": @initListener,
-      "status_created": @statusCreatedListener,
-      "degraded": @statusCreatedListener,
-      "restored": @statusCreatedListener,
+      "status_created": @basicEventListener,
+      "degraded": @basicEventListener,
+      "restored": @basicEventListener,
       "issue_created": @issueCreatedListener,
       "issue_updated": @issueUpdatedListener,
       "issue_resolved": @issueResolvedListener,
       "issue_reopened": @issueReopenedListener,
       "issue_cancelled": @issueResolvedListener,
       "issue_started": @issueCreatedListener,
-      "issue_ended": @issueResolvedListener
+      "issue_ended": @issueResolvedListener,
+      "cache_grown": @basicEventListener,
+      "cache_rebuilt": @basicEventListener
     }
 
     for event, listener of eventListeners
       @source.addEventListener event, listener, false
 
+  basicEventListener: (e) =>
+    @parseBasicEventData e
+
   initListener: (e) =>
-    data = @parseEventWithState e
+    data = @parseBasicEventData e
 
     if "issues" of data
       @issues = {}
@@ -204,11 +272,8 @@ class window.Status.Widget
 
     @updateIssues()
 
-  statusCreatedListener: (e) =>
-    data = @parseEventWithState e
-
   issueCreatedListener: (e) =>
-    data = @parseEventWithState e
+    data = @parseBasicEventData e
 
     if "issue" of data
       data["issue"]["updates"] = []
@@ -217,7 +282,7 @@ class window.Status.Widget
     @updateIssues()
 
   issueUpdatedListener: (e) =>
-    data = @parseEventWithState e
+    data = @parseBasicEventData e
 
     if "update" of data
       issueId = data["update"]["issue_id"]
@@ -227,7 +292,7 @@ class window.Status.Widget
       @updateIssues()
 
   issueResolvedListener: (e) =>
-    data = @parseEventWithState e
+    data = @parseBasicEventData e
 
     issueId = ""
     if "update" of data
@@ -240,7 +305,7 @@ class window.Status.Widget
     @updateIssues()
 
   issueReopenedListener: (e) =>
-    data = @parseEventWithState e
+    data = @parseBasicEventData e
 
     if "update" of data
       @insertIssue data["update"]["issue"]
@@ -254,9 +319,11 @@ class window.Status.Widget
       warn "Received invalid event payload"
     {}
 
-  parseEventWithState: (e) ->
+  parseBasicEventData: (e) ->
     data = @parse e
     @updateState data.state
+    @updatePercentUptime data.percent_uptime
+    @updateIncidentFreeStreak data.incident_free_streak
     data
 
   updateState: (state) ->
@@ -273,6 +340,22 @@ class window.Status.Widget
 
     @state = state
     @updateIssuePaneText()
+
+  updatePercentUptime: (uptime) ->
+    return unless @elements.statisticUptime
+    uptimeDecimals = clamp @display["statistic"]["uptimeDecimals"], 0, 10
+    percent = +parseFloat(uptime).toFixed uptimeDecimals
+    text = template @i18n["statistic"]["uptime"], percent: percent
+    setElText @elements.statisticUptime, text
+
+  updateIncidentFreeStreak: (streak) ->
+    return unless @elements.statisticStreak
+    streakLessThanDay = streak < 86400
+    @toggleStatistic @elements.statisticStreak, streakLessThanDay
+    return if streakLessThanDay
+    fromTime = (new Date // 1000) - streak
+    text = template @i18n["statistic"]["streak"], duration: @distanceInWords(fromTime)
+    setElText @elements.statisticStreak, text
 
   updateIssues: ->
     if @elements.paneIssues?
@@ -383,6 +466,13 @@ class window.Status.Widget
     el.href = href
     el.target = @options["linkTarget"]
     el.rel = "noopener"
+    el
+
+  buildStatistic: ->
+    @createEl "span", @elements.paneStatistics, "pane_statistic"
+
+  toggleStatistic: (statistic, toggle) ->
+    setElDataAttr statistic, "hidden", toggle
 
   alignPane: ->
     offset = @elements.led.offsetLeft
@@ -408,11 +498,58 @@ class window.Status.Widget
         func.apply(obj, args)
       timeout = setTimeout delayed, threshold || 100
 
+  distanceInWords: (fromTime, toTime = (new Date // 1000)) ->
+    if fromTime > toTime
+      fromTime = toTime
+      toTime = fromTime
+    distanceInSeconds = toTime - fromTime
+    distanceInMinutes = Math.round(distanceInSeconds / 60)
+
+    switch
+      when 0 <= distanceInMinutes <= 1
+        switch
+          when 0 <= distanceInSeconds <= 4 then @timeT "lessThanXSeconds", 5
+          when 5 <= distanceInSeconds <= 9 then @timeT "lessThanXSeconds", 10
+          when 10 <= distanceInSeconds <= 19 then @timeT "lessThanXSeconds", 20
+          when 20 <= distanceInSeconds <= 39 then @timeT "halfAMinute"
+          when 40 <= distanceInSeconds <= 59 then @timeT "lessThanXMinutes", 1
+          else @timeT "xMinutes", 1
+      when 2 <= distanceInMinutes <= 45 then @timeT "xMinutes", distanceInMinutes
+      when 45 <= distanceInMinutes <= 90 then @timeT "aboutXHours", 1
+      when 90 <= distanceInMinutes <= 1440
+        @timeT "aboutXHours", Math.round(distanceInMinutes / 60)
+      when 1440 <= distanceInMinutes <= 2520 then @timeT "xDays", 1
+      when 2520 <= distanceInMinutes <= 43200
+        @timeT "xDays", Math.round(distanceInMinutes / 1440)
+      when 43200 <= distanceInMinutes <= 86400
+        @timeT "aboutXMonths", Math.round(distanceInMinutes / 43200)
+      when 86400 <= distanceInMinutes <= 525600
+        @timeT "xMonths", Math.round(distanceInMinutes / 43200)
+      else
+        remainder = distanceInMinutes % 525600
+        distanceInYears = distanceInMinutes // 525600
+        if remainder < 131400
+          @timeT "aboutXYears", distanceInYears
+        else if remainder < 394200
+          @timeT "overXYears", distanceInYears
+        else
+          @timeT "almostXYears", distanceInYears + 1
+
+  timeT: (key, count = null) ->
+    translation = @i18n["time"]["distanceInWords"][key] if key of @i18n["time"]["distanceInWords"]
+    return unless translation?
+    if typeof translation == "object"
+      return unless count?
+      translation = translation[if count == 1 then "one" else "other"]
+    return translation unless count?
+    template translation, count: count
+
   addClass = (el, className) ->
     if el.classList
       el.classList.add className
     else
       el.className += " " + className
+    el
 
   createEl = (type, className, parent) ->
     el = document.createElement type
@@ -446,6 +583,9 @@ class window.Status.Widget
   fib = (n) ->
     if n < 2 then n else fib(n - 1) + fib(n - 2)
 
+  clamp = (n, min, max) ->
+    if n <= min then min else if n >= max then max else n
+
   deepMerge = (target, source) ->
     destination = {}
 
@@ -454,7 +594,7 @@ class window.Status.Widget
       sv = source[k]
 
       if sv?
-        if typeof sv == 'object'
+        if typeof sv == "object"
           destination[k] = deepMerge tv || {}, sv || {}
         else
           destination[k] = sv
@@ -462,6 +602,9 @@ class window.Status.Widget
         destination[k] = tv
 
     destination
+
+  template = (tpl, args) ->
+    tpl.replace /\${(\w+)}/g, (_, v) -> args[v]
 
   log = (msg, level = "log") ->
     console[level]("[Status Widget] #{msg}")

@@ -3,7 +3,7 @@
   line-height: 1rem;
   position: relative;
 
-  &.status_widget--pane-enabled:hover {
+  &.status-widget--pane-enabled:hover {
     cursor: pointer;
   }
 }
@@ -107,14 +107,36 @@
   }
 }
 
-  .status-widget__pane__heading {
-    background: #fff;
-    color: #333;
+  .status-widget__pane__header {
     display: block;
-    font-size: 16px;
-    line-height: 60px;
-    text-align: center;
   }
+
+    .status-widget__pane__heading {
+      background: #fff;
+      color: #333;
+      display: block;
+      font-size: 16px;
+      line-height: 60px;
+      text-align: center;
+    }
+
+    .status-widget__pane_statistics {
+      color: #666;
+      font-size: 12px;
+      padding-bottom: 15px;
+      text-align: center;
+    }
+
+      .status-widget__pane_statistic {
+        &[data-hidden="true"] {
+          display: none;
+        }
+
+        & + &:not([data-hidden="true"])::before {
+          content: "\2014";
+          padding: 0 5px;
+        }
+      }
 
   .status-widget__pane__container {
     font-size: 14px;
