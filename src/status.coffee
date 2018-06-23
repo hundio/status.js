@@ -227,7 +227,7 @@ class window.Status.Widget
     @reconnect delay
     @reconnectAttempt += 1
 
-    setElDataAttr @elements.led "state", "pending"
+    setElDataAttr @elements.led, "state", "pending"
 
     unless @display["hideOnError"]
       @setVisibility "visible"
