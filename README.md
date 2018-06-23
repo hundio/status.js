@@ -11,7 +11,7 @@
 Add this script to your head or footer:
 
 ```html
-<script src="https://libraries.hund.io/status-js/status-3.5.0.js"></script>
+<script src="https://libraries.hund.io/status-js/status-3.7.1.js"></script>
 ```
 
 Create an empty element with a selector (e.g. `<div id="status"></div>`) where you want the widget to appear.
@@ -46,10 +46,12 @@ Configure the widget:
     ledPosition: "left", // Either "left" or "right"
     statistic: {
       uptimeDecimals: 4 // Number of decimals for uptime pane statistic
+      minIncidentFreeStreak: 86400 // Minimum number of incident free streak seconds required to display
     }
   },
   i18n: {
     heading: "Issues",
+    toggle: "${state}", // Other variables: percentUptime and incidentFreeStreak
     loading: "Loading status...",
     error: "Connection error",
     statistic: {
