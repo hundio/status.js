@@ -3,7 +3,7 @@
 
 ![Preview](https://libraries.hund.io/status-js/preview.png)
 
-[![License](https://img.shields.io/github/license/hundio/status.js.svg?maxAge=2592000)](https://github.com/hundio/status.js/blob/master/LICENSE) [![GitHub release](https://img.shields.io/github/release/hundio/status.js.svg?maxAge=2592000)](https://github.com/hundio/status.js/releases) [![Code Climate](https://img.shields.io/codeclimate/github/hundio/status.js.svg?maxAge=2592000)](https://codeclimate.com/github/hundio/status.js)
+[![License](https://img.shields.io/github/license/hundio/status.js.svg?maxAge=2592000)](https://github.com/hundio/status.js/blob/master/LICENSE) [![GitHub release](https://img.shields.io/github/release/hundio/status.js.svg?maxAge=2592000)](https://github.com/hundio/status.js/releases) [![Maintainability](https://api.codeclimate.com/v1/badges/a16f7b24c756af9f1363/maintainability)](https://codeclimate.com/github/hundio/status.js/maintainability)
 
 
 ## Usage
