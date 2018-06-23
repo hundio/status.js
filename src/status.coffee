@@ -27,11 +27,13 @@ class window.Status.Widget
         "panePosition": "bottom-right",
         "ledPosition": "left",
         "statistic": {
-          "uptimeDecimals": 4
+          "uptimeDecimals": 4,
+          "minIncidentFreeStreak": 86400
         }
       }
       "i18n": {
         "heading": "Issues",
+        "toggle": "${state}",
         "loading": "Loading status...",
         "error": "Connection error",
         "statistic": {
@@ -321,41 +323,40 @@ class window.Status.Widget
 
   parseBasicEventData: (e) ->
     data = @parse e
+    humanData = {
+      state: @humanState(data.state),
+      percentUptime: @humanPercentUptime(data.percent_uptime),
+      incidentFreeStreak: @humanIncidentFreeStreak(data.incident_free_streak)
+    }
+
     @updateState data.state
-    @updatePercentUptime data.percent_uptime
-    @updateIncidentFreeStreak data.incident_free_streak
+    @updatePercentUptime data.percent_uptime, humanData.percentUptime
+    @updateIncidentFreeStreak data.incident_free_streak,
+      humanData.incidentFreeStreak
+    @updateToggle humanData
     data
 
   updateState: (state) ->
     state = "pending" if !state?
     setElDataAttr @elements.led, "state", state
-
-    if @elements.state?
-      text = state
-      if "state" of @i18n
-        text = @i18n["state"][state] if state of @i18n["state"]
-
-      setElText @elements.state, text
-      @alignPane()
-
     @state = state
     @updateIssuePaneText()
 
-  updatePercentUptime: (uptime) ->
-    return unless @elements.statisticUptime
-    uptimeDecimals = clamp @display["statistic"]["uptimeDecimals"], 0, 10
-    percent = +parseFloat(uptime).toFixed uptimeDecimals
-    text = template @i18n["statistic"]["uptime"], percent: percent
-    setElText @elements.statisticUptime, text
+  updateToggle: (humanData) ->
+    return unless @elements.state?
+    text = template @i18n["toggle"], humanData
+    setElText @elements.state, text
+    @alignPane()
 
-  updateIncidentFreeStreak: (streak) ->
+  updatePercentUptime: (uptime, humanUptime) ->
+    return unless @elements.statisticUptime
+    setElText @elements.statisticUptime, humanUptime
+
+  updateIncidentFreeStreak: (streak, humanStreak) ->
     return unless @elements.statisticStreak
-    streakLessThanDay = streak < 86400
-    @toggleStatistic @elements.statisticStreak, streakLessThanDay
-    return if streakLessThanDay
-    fromTime = (new Date // 1000) - streak
-    text = template @i18n["statistic"]["streak"], duration: @distanceInWords(fromTime)
-    setElText @elements.statisticStreak, text
+    toggle = @incidentFreeStreakLessThanMin streak
+    @toggleStatistic @elements.statisticStreak, toggle
+    setElText @elements.statisticStreak, humanStreak
 
   updateIssues: ->
     if @elements.paneIssues?
@@ -376,6 +377,23 @@ class window.Status.Widget
   updateIssuePaneText: ->
     return if @issuesPresent()
     setElText @elements.paneText, @i18n["issue"]["empty"][@state]
+
+  humanState: (state) ->
+    state = "pending" if !state?
+    text = state
+    if "state" of @i18n
+      text = @i18n["state"][state] if state of @i18n["state"]
+    text
+
+  humanPercentUptime: (uptime) ->
+    uptimeDecimals = clamp @display["statistic"]["uptimeDecimals"], 0, 10
+    percent = +parseFloat(uptime).toFixed uptimeDecimals
+    template @i18n["statistic"]["uptime"], percent: percent
+
+  humanIncidentFreeStreak: (streak) ->
+    return "" if @incidentFreeStreakLessThanMin streak
+    fromTime = (new Date // 1000) - streak
+    template @i18n["statistic"]["streak"], duration: @distanceInWords(fromTime)
 
   insertIssue: (issue) ->
     id = issue["id"]
@@ -456,6 +474,10 @@ class window.Status.Widget
 
   issuesPresent: ->
     Object.keys(@issues).length != 0
+
+  incidentFreeStreakLessThanMin: (streak) ->
+    streakMin = Math.max 0, @display["statistic"]["minIncidentFreeStreak"]
+    streak < streakMin
 
   createEl: (type, parent, className = undefined) ->
     cssClass = "status-widget"
