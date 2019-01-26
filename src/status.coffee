@@ -3,7 +3,7 @@ goog.provide "status.main"
 window.Status or= {}
 
 class window.Status.Widget
-  _version = "3.7.1"
+  _version = "3.8.0"
 
   constructor: (@options = {}) ->
     requiredOptions = ["hostname", "selector"]
@@ -18,6 +18,7 @@ class window.Status.Widget
       "ssl": true,
       "css": true,
       "debug": false,
+      "outOfOffice": false,
       "linkTarget": "_blank",
       "display": {
         "hideOnError": true,
@@ -29,6 +30,9 @@ class window.Status.Widget
         "statistic": {
           "uptimeDecimals": 4,
           "minIncidentFreeStreak": 86400
+        },
+        "outOfOffice": {
+          "resetStatusLed": false
         }
       }
       "i18n": {
@@ -49,6 +53,9 @@ class window.Status.Widget
             "outage": "There are currently no reported issues,
               but we have detected outages on at least one component."
           }
+        },
+        "state": {
+          "outOfOffice": "Out of Office"
         },
         "linkBack": "View Status Page",
         "time": {
@@ -108,6 +115,7 @@ class window.Status.Widget
     @hostname = @options["hostname"]
     @display = @options["display"]
     @i18n = @options["i18n"]
+    @outOfOffice = @display["outOfOffice"]
 
     if !/^https?:\/\//i.test(@hostname)
       protocol = (if @options["ssl"] then "https" else "http")
@@ -149,6 +157,8 @@ class window.Status.Widget
     unless @display["ledOnly"]
       @elements.state = @createEl "span", @elements.widget, "state"
       setElText @elements.state, @i18n["loading"]
+
+    @officeHoursTimeout()
 
     if @display["ledPosition"] != "left"
       @elements.widget.appendChild @elements.led
@@ -323,28 +333,40 @@ class window.Status.Widget
 
   parseBasicEventData: (e) ->
     data = @parse e
-    humanData = {
+    @humanData = {
       state: @humanState(data.state),
       percentUptime: @humanPercentUptime(data.percent_uptime),
       incidentFreeStreak: @humanIncidentFreeStreak(data.incident_free_streak)
     }
 
     @updateState data.state
-    @updatePercentUptime data.percent_uptime, humanData.percentUptime
+    @updatePercentUptime data.percent_uptime, @humanData.percentUptime
     @updateIncidentFreeStreak data.incident_free_streak,
-      humanData.incidentFreeStreak
-    @updateToggle humanData
+      @humanData.incidentFreeStreak
+    @updateToggle @humanData
     data
 
   updateState: (state) ->
     state = "pending" if !state?
-    setElDataAttr @elements.led, "state", state
+
+    if @isOutOfOffice()
+      setElDataAttr @elements.led, "state", "pending"
+    else
+      setElDataAttr @elements.led, "state", state
+
     @state = state
     @updateIssuePaneText()
 
   updateToggle: (humanData) ->
     return unless @elements.state?
     text = template @i18n["toggle"], humanData
+    @stateText = text
+
+    if @isOutOfOffice()
+      fakeHumanData = Object.assign {}, humanData
+      fakeHumanData.state = @humanState "outOfOffice"
+      text = template @i18n["toggle"], fakeHumanData
+
     setElText @elements.state, text
     @alignPane()
 
@@ -507,6 +529,49 @@ class window.Status.Widget
 
     @elements.pane.style.left = offset + "px"
 
+  resetState: ->
+    return unless @state? && @humanData?
+    @updateState @state
+    @updateToggle @humanData
+
+  officeHoursTimeout: ->
+    now = utcDate().getTime()
+    officeOpen = @officeOpenTimestamp() - now
+    officeClose = @officeCloseTimestamp() - now
+    nextChange = if officeOpen < officeClose then officeOpen else officeClose
+
+    setTimeout =>
+      @resetState()
+      @officeHoursTimeout()
+    , nextChange
+
+  isOutOfOffice: ->
+    return false if !@options["outOfOffice"]
+    now = utcDate().getTime()
+    !(@officeOpenTimestamp() <= now && now <= @officeCloseTimestamp())
+
+  officeOpenTimestamp: ->
+    @officeHourToTimestamp "officeOpenHour"
+
+  officeCloseTimestamp: ->
+    @officeHourToTimestamp "officeCloseHour"
+
+  officeHourToTimestamp: (hourOptionKey) ->
+    hour = @outOfOffice[hourOptionKey]
+    advanceDay = hourOptionKey == "officeCloseHour" && @officeHoursOverlapDays()
+
+    if window.moment
+      day = moment().tz(@outOfOffice["timezone"]).startOf("day").add hour, "h"
+      day.add(1, "d") if advanceDay
+      day.valueOf()
+    else
+      day = utcDate()
+      day.setDate(day.getDate() + 1) if advanceDay
+      day.setHours hour, 0, 0, 0
+
+  officeHoursOverlapDays: ->
+    @outOfOffice["officeOpenHour"] < @outOfOffice["officeCloseHour"]
+
   debounce: (func, threshold, execAsap) ->
     timeout = null
     (args...) =>
@@ -588,6 +653,9 @@ class window.Status.Widget
   setElHTML = (el, html) ->
     el.innerHTML = html
 
+  getElDataAttr = (el, attr) ->
+    el.getAttribute "data-#{attr}"
+
   setElDataAttr = (el, attr, val) ->
     el.setAttribute "data-#{attr}", val
 
@@ -607,6 +675,10 @@ class window.Status.Widget
 
   clamp = (n, min, max) ->
     if n <= min then min else if n >= max then max else n
+
+  utcDate = ->
+    now = new Date()
+    new Date now.getTime() + now.getTimezoneOffset() * 60000
 
   deepMerge = (target, source) ->
     destination = {}
