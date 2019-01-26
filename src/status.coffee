@@ -133,12 +133,12 @@ class window.Status.Widget
 
     widgetSelector = @options["selector"]
     @elements.widget = document.querySelector widgetSelector
-    @setVisibility "hidden"
 
     if @elements.widget == null
       warn "Unable to find element with selector: #{widgetSelector}"
       return
 
+    @setVisibility "hidden"
     @injectStyles() if @options["css"]
     @connect()
 
