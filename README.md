@@ -11,7 +11,7 @@
 Add this script to your head or footer:
 
 ```html
-<script src="https://libraries.hund.io/status-js/status-3.7.1.js"></script>
+<script src="https://libraries.hund.io/status-js/status-3.8.0.js"></script>
 ```
 
 Create an empty element with a selector (e.g. `<div id="status"></div>`) where you want the widget to appear.
@@ -36,6 +36,7 @@ Configure the widget:
   selector: "", // CSS selector of an existing element for widget placement
   css: true, // Inject the default CSS styles
   debug: false, // Log debugging messages
+  outOfOffice: false, // Toggles out of office status change (see section below)
   linkTarget: "_blank", // The link target for outbound links (see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-target)
   display: {
     hideOnError: true, // Hide the widget if a connection cannot be established
@@ -47,6 +48,12 @@ Configure the widget:
     statistic: {
       uptimeDecimals: 4 // Number of decimals for uptime pane statistic
       minIncidentFreeStreak: 86400 // Minimum number of incident free streak seconds required to display
+    },
+    outOfOffice: {
+      resetStatusLed: false, // Sets the status LED indicator to it's default gray color
+      officeOpenHour: 0, // An integer representing the hour (24-hour, UTC if no timezone)
+      officeCloseHour: 24, // An integer representing the hour (24-hour, UTC if no timezone)
+      timezone: "" // See the section below for setting a timezone
     }
   },
   i18n: {
@@ -70,7 +77,8 @@ Configure the widget:
       operational: "Operational",
       degraded: "Degraded",
       outage: "Outage",
-      pending: "Pending"
+      pending: "Pending",
+      outOfOffice: "Out of Office"
     },
     linkBack: "View Status Page",
     dates: { // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleString#Parameters
@@ -128,4 +136,27 @@ Configure the widget:
     }
   }
 }
+```
+
+### Out of office status
+
+You may wish to display an "out of office" status when outside of business hours. To do so, set the `outOfOffice` option to `true`, then configure the feature within the `display` object as seen above.
+
+#### Timezone support
+
+By default, UTC is used. [Moment Timezone](https://momentjs.com/timezone/) (with data) must be included on pages if you wish to use a specific timezone and respect DST changes. It will be used when detected. Specify a timezone as so:
+
+```javascript
+var statusWidget = new Status.Widget({
+  hostname: "example.hund.io",
+  selector: "#status",
+  outOfOffice: true,
+  display: {
+    outOfOffice: {
+      officeOpenHour: 9,
+      officeCloseHour: 17,
+      timezone: "America/Los_Angeles"
+    }
+  }
+});
 ```
