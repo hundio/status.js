@@ -535,7 +535,7 @@ class window.Status.Widget
     @updateToggle @humanData
 
   officeHoursTimeout: ->
-    now = utcDate().getTime()
+    now = @officeTimestamp()
     officeOpen = @officeOpenTimestamp() - now
     officeClose = @officeCloseTimestamp() - now
     nextChange = if officeOpen < officeClose then officeOpen else officeClose
@@ -547,7 +547,7 @@ class window.Status.Widget
 
   isOutOfOffice: ->
     return false if !@options["outOfOffice"]
-    now = utcDate().getTime()
+    now = @officeTimestamp()
     !(@officeOpenTimestamp() <= now && now <= @officeCloseTimestamp())
 
   officeOpenTimestamp: ->
@@ -571,6 +571,12 @@ class window.Status.Widget
 
   officeHoursOverlapDays: ->
     @outOfOffice["officeOpenHour"] < @outOfOffice["officeCloseHour"]
+
+  officeTimestamp: ->
+    if window.moment
+      moment().tz(@outOfOffice["timezone"]).valueOf()
+    else
+      utcDate().getTime()
 
   debounce: (func, threshold, execAsap) ->
     timeout = null
