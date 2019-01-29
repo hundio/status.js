@@ -349,7 +349,7 @@ class window.Status.Widget
   updateState: (state) ->
     state = "pending" if !state?
 
-    if @isOutOfOffice()
+    if @isOutOfOffice() && @outOfOffice["resetStatusLed"]
       setElDataAttr @elements.led, "state", "pending"
     else
       setElDataAttr @elements.led, "state", state
