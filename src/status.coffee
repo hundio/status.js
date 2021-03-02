@@ -214,6 +214,9 @@ class window.Status.Widget
       else
         url += "status_page"
 
+      if @options["privacyBypassToken"]?
+        url += "?bt=#{@options["privacyBypassToken"]}"
+
       @source = new window["EventSource"](url)
 
       @source.onerror = @errorListener
@@ -508,6 +511,8 @@ class window.Status.Widget
 
   buildLink: (el, href) ->
     el.href = href
+    if @options["privacyBypassToken"]? and @options["includePrivacyBypassTokenInLinks"]
+      el.href += "?bt=#{@options["privacyBypassToken"]}"
     el.target = @options["linkTarget"]
     el.rel = "noopener"
     el

@@ -34,6 +34,8 @@ Configure the widget:
   hostname: "", // The hostname of your status page (custom domains supported)
   component: "", // Show a specific component's status by providing its id
   selector: "", // CSS selector of an existing element for widget placement
+  privacyBypassToken: "", // A Privacy Bypass Token to allow visitors to view this widget without additional authentication (requires the Privacy Control upgrade)
+  includePrivacyBypassTokenInLinks: false, // Include the given Privacy Bypass Token in any widget links to the status page, so that visitors can view the status page itself through the widget without additional authentication
   css: true, // Inject the default CSS styles
   debug: false, // Log debugging messages
   outOfOffice: false, // Toggles out of office status change (see section below)
