@@ -560,7 +560,7 @@ class window.Status.Widget
     hour = @outOfOffice[hourOptionKey]
     advanceDay = hourOptionKey == "officeCloseHour" && @officeHoursOverlapDays()
 
-    if window.moment
+    if @outOfOffice["timezone"]? and momentTzLoaded()
       day = moment().tz(@outOfOffice["timezone"]).startOf("day").add hour, "h"
       day.add(1, "d") if advanceDay
       day.valueOf()
@@ -573,7 +573,7 @@ class window.Status.Widget
     @outOfOffice["officeOpenHour"] < @outOfOffice["officeCloseHour"]
 
   officeTimestamp: ->
-    if window.moment
+    if @outOfOffice["timezone"]? and momentTzLoaded()
       moment().tz(@outOfOffice["timezone"]).valueOf()
     else
       utcDate().getTime()
@@ -685,6 +685,9 @@ class window.Status.Widget
   utcDate = ->
     now = new Date()
     new Date now.getTime() + now.getTimezoneOffset() * 60000
+
+  momentTzLoaded = ->
+    window.moment and window.moment().tz? and window.moment().tz("Etc/UTC")?
 
   deepMerge = (target, source) ->
     destination = {}
