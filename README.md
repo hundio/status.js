@@ -11,7 +11,7 @@
 Add this script to your head or footer:
 
 ```html
-<script src="https://libraries.hund.io/status-js/status-3.8.2.js"></script>
+<script src="https://libraries.hund.io/status-js/status-3.9.0.js"></script>
 ```
 
 Create an empty element with a selector (e.g. `<div id="status"></div>`) where you want the widget to appear.
